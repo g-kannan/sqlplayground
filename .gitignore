@@ -1,0 +1,15 @@
+*.egg
+*.egg-info
+dist
+build
+.tox
+.nox
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.pyc
+*.pyo
+__pycache__/
+venv/
+.streamlit/secrets.toml
