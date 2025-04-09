@@ -33,6 +33,9 @@ if not check_password():
 token = st.secrets.backend.mdtoken
 conn = duckdb.connect(f"md:interback?motherduck_token={token}") 
 
+if 'cols_list' not in st.session_state:
+    st.session_state.cols_list = '*'
+
 st.set_page_config(page_title="SQL Playground",layout="wide")
 st.header("Welcome to SQLPlayground")
 st.divider()
@@ -60,11 +63,29 @@ with tab4:
     st.divider()
 
 st.write("SQL Query Editor")
+dataset = st.selectbox("Select a dataset", ["people", "customers", "organizations","nyctaxi","custom"])
+if dataset == "custom":
+    place_holder_query = "SELECT * FROM <table_name> LIMIT 10"
+elif dataset in ["nyctaxi"]:
+    result_df = conn.sql(f"SELECT * FROM sample_data.nyc.taxi LIMIT 1").df()
+    cols = result_df.columns
+    cols_list = cols.tolist()
+    st.session_state.cols_list = ', '.join(cols_list)
+    place_holder_query = f"SELECT {st.session_state.cols_list} FROM sample_data.nyc.taxi limit 100;"
+elif dataset in ["people", "customers", "organizations"]:
+    result_df = conn.sql(f"SELECT * FROM {dataset} LIMIT 1").df()
+    cols = result_df.columns
+    cols_list = cols.tolist()
+    st.session_state.cols_list = ', '.join(cols_list)
+    place_holder_query = f"SELECT {st.session_state.cols_list} FROM {dataset} limit 100;"
 
-query = st.text_input("Enter your SQL query", value="select * from people limit 10")
+query = st.text_area("Enter your SQL query", value=place_holder_query, height=200)
 if st.button("Execute SQL"):
-    result = conn.sql(query)
-    st.dataframe(result,hide_index=True)
+    try:
+        result = conn.sql(query)
+        st.dataframe(result, hide_index=True)
+    except Exception as e:
+        st.error(f"Error executing query: {e}")
 
 
 st.divider()
